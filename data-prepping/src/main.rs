@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 
@@ -72,17 +71,10 @@ fn main() {
         })
         .take(opt.count.unwrap_or(usize::MAX));
 
-    let mut names = HashSet::new();
-
     for path in walk {
-        midi::test_read_midi(&path, &mut names);
+        midi::test_read_midi(&path);
         if let Some(processed_file) = &mut processed_file {
             writeln!(processed_file, "{}", path.to_str().unwrap()).unwrap();
         }
-    }
-
-    let mut output = File::create(opt.output).unwrap();
-    for n in names.iter() {
-        writeln!(output, "{}", n).unwrap();
     }
 }

@@ -96,6 +96,7 @@ dependencies = [
  "ignore",
  "log",
  "pretty_env_logger",
+ "regex",
  "structopt",
 ]
 
