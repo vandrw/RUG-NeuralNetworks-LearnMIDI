@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use bitvec::order::Msb0;
-use bitvec::slice::AsBits;
+use bitvec::slice::{AsBits, BitSlice};
 use ghakuf::messages::{MetaEvent, MidiEvent, SysExEvent};
 use ghakuf::reader::{Handler, HandlerStatus, Reader};
 use log::{error, trace};
@@ -31,7 +31,7 @@ pub fn process_midi_file(
 }
 
 #[derive(Clone, Eq, PartialEq)]
-pub struct Notes([u8; 16]);
+pub struct Notes(pub [u8; 16]);
 
 struct ExtractorHandler<Cb> {
     instrument_track_matcher: Regex,
@@ -219,33 +219,33 @@ impl Notes {
         Notes([0x00; 16])
     }
 
+    pub fn bits(&self) -> &BitSlice<Msb0, u8> {
+        self.0.bits::<Msb0>()
+    }
+    pub fn bits_mut(&mut self) -> &mut BitSlice<Msb0, u8> {
+        self.0.bits_mut::<Msb0>()
+    }
+
     pub fn set_on(&mut self, note: u8) {
-        self.0.bits_mut::<Msb0>().set(note as usize, true);
+        self.bits_mut().set(note as usize, true);
     }
 
     pub fn set_off(&mut self, note: u8) {
-        self.0.bits_mut::<Msb0>().set(note as usize, false);
+        self.bits_mut().set(note as usize, false);
     }
 
     pub fn clear(&mut self) {
-        self.0.bits_mut::<Msb0>().set_all(false);
+        self.bits_mut().set_all(false);
     }
 }
 
 impl std::fmt::Debug for Notes {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for bit in self.0.bits::<Msb0>() {
+        fmt.write_str("Notes(")?;
+        for bit in self.bits() {
             fmt.write_str(if *bit { "1" } else { "0" })?;
         }
-        Ok(())
-    }
-}
-
-impl std::fmt::Display for Notes {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for byte in &self.0 {
-            fmt.write_fmt(format_args!("{:X}", byte))?;
-        }
+        fmt.write_str(")")?;
         Ok(())
     }
 }

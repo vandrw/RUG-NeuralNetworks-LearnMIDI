@@ -8,8 +8,11 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 pub mod midi;
+pub mod output;
 
 use midi::AbortError;
+
+use output::OutputFormat;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -47,6 +50,10 @@ struct Opt {
         default_value = "piano|guitar|string|harmon"
     )]
     name_filter: String,
+
+    /// Specify an output format. Valid options are 'bits-hex' or 'chars'.
+    #[structopt(short, long, default_value = "bits-hex")]
+    output_format: OutputFormat,
 
     /// The folder or file to search through.
     input: PathBuf,
