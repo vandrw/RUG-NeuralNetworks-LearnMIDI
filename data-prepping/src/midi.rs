@@ -7,12 +7,13 @@ use ghakuf::reader::{Handler, HandlerStatus, Reader};
 use log::{error, trace};
 use regex::bytes::Regex;
 
-pub fn test_read_midi(
+pub fn process_midi_file(
     path: impl AsRef<Path>,
+    instrument_regex: &str,
     callback: impl FnMut(Result<(String, &[Notes]), AbortError>),
 ) {
     let mut handler = ExtractorHandler::new(
-        Regex::new("(?-u)(piano|guitar|string|harmon)").unwrap(),
+        Regex::new(&format!("(?-u)({})", instrument_regex)).unwrap(),
         callback,
     );
 

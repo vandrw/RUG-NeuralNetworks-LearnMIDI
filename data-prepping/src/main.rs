@@ -3,7 +3,7 @@ use std::io::Write;
 
 use ignore::types::TypesBuilder;
 use ignore::WalkBuilder;
-use log::{warn, info, trace};
+use log::{info, trace, warn};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -39,6 +39,15 @@ struct Opt {
     #[structopt(short = "n", long)]
     count: Option<usize>,
 
+    /// Specify a regex filter which is matched against the midi track-name and
+    /// midi instrument-name tags. If it matches this track will be processed.
+    #[structopt(
+        short = "f",
+        long = "filter",
+        default_value = "piano|guitar|string|harmon"
+    )]
+    name_filter: String,
+
     /// The folder or file to search through.
     input: PathBuf,
 
@@ -46,16 +55,7 @@ struct Opt {
     output: PathBuf,
 }
 
-fn main() {
-    pretty_env_logger::init();
-
-    let mut opt = Opt::from_args();
-
-    if let Some(pi) = opt.processed_ignore {
-        opt.processed = Some(pi.clone());
-        opt.ignore.push(pi);
-    }
-
+fn create_file_walk(opt: &Opt) -> impl Iterator<Item = PathBuf> {
     let mut types_builder = TypesBuilder::new();
     types_builder.add("midi", "*.{mid,smf}").unwrap();
     types_builder.select("midi");
@@ -63,11 +63,30 @@ fn main() {
     let mut walk_builder = WalkBuilder::new(opt.input.canonicalize().unwrap());
     walk_builder.types(types_builder.build().unwrap());
     walk_builder.max_depth(opt.max_depth);
-    for ignore in opt.ignore {
+    for ignore in &opt.ignore {
         walk_builder.add_ignore(ignore);
     }
 
-    let mut processed_file = opt.processed.map(|processed| {
+    walk_builder
+        .build()
+        .filter_map(|r| match r {
+            Ok(entry) if !entry.path().is_dir() => Some(entry.path().to_owned()),
+            _ => None,
+        })
+        .take(opt.count.unwrap_or(usize::MAX))
+}
+
+fn main() {
+    pretty_env_logger::init();
+
+    let mut opt = Opt::from_args();
+
+    if let Some(pi) = opt.processed_ignore.take() {
+        opt.processed = Some(pi.clone());
+        opt.ignore.push(pi);
+    }
+
+    let mut processed_file = opt.processed.as_ref().map(|processed| {
         let processed_path: PathBuf = processed.canonicalize().unwrap();
         OpenOptions::new()
             .append(true)
@@ -76,27 +95,20 @@ fn main() {
             .unwrap()
     });
 
-    let walk = walk_builder
-        .build()
-        .filter_map(|r| match r {
-            Ok(entry) if !entry.path().is_dir() => Some(entry.path().to_owned()),
-            _ => None,
-        })
-        .take(opt.count.unwrap_or(usize::MAX));
-
-    for path in walk {
-        midi::test_read_midi(&path, |track| match track {
+    for path in create_file_walk(&opt) {
+        midi::process_midi_file(&path, &opt.name_filter, |track| match track {
             Ok((name, track)) => {
                 info!("track_name: {}", name);
                 for n in track {
                     info!("track: {:?}", n);
                 }
             }
-            Err(AbortError::NameMismatch) => trace!("Midi track name did not match the regex"),
+            Err(AbortError::NameMismatch) => trace!("Midi track name did not match the filter"),
             Err(AbortError::EmptyTrack) => trace!("Midi track was basically empty"),
             Err(err) => warn!("Error while processing midi: {:?}", err),
         });
-        if let Some(processed_file) = &mut processed_file {
+
+        if let Some(processed_file) = processed_file.as_mut() {
             writeln!(processed_file, "{}", path.to_str().unwrap()).unwrap();
         }
     }
