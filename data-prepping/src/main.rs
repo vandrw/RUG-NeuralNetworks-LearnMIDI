@@ -17,20 +17,25 @@ use midi::AbortError;
     about = "A tool to convert MIDI files to use as training data."
 )]
 struct Opt {
-    /// Path to an ignore file. Like gitignore.
-    #[structopt(long)]
-    ignore: Option<PathBuf>,
+    /// Path to an ignore file. Like gitignore. Can be specified multiple times.
+    #[structopt(short, long)]
+    ignore: Vec<PathBuf>,
 
-    /// Path to an ignore file. Appends path to all files that have been
-    /// processed. Can be the same as the --ignore file.
-    #[structopt(long)]
+    /// Path to a file. All paths to the processed midi files will be appended
+    /// to this file. This file can also be used as an ignore file (See: --pi
+    #[structopt(short, long)]
     processed: Option<PathBuf>,
 
+    /// This specifies both --processed and --ignore at the same time. Can not
+    /// be used together with --processed.
+    #[structopt(long = "pi", conflicts_with = "processed")]
+    processed_ignore: Option<PathBuf>,
+
     /// Max depth while recursing directories. Default is no maximum.
-    #[structopt(long)]
+    #[structopt(short = "d", long)]
     max_depth: Option<usize>,
 
-    /// Number of files to process.
+    /// Number of files to process. Infinite if unspecified.
     #[structopt(short = "n", long)]
     count: Option<usize>,
 
@@ -44,7 +49,12 @@ struct Opt {
 fn main() {
     pretty_env_logger::init();
 
-    let opt = Opt::from_args();
+    let mut opt = Opt::from_args();
+
+    if let Some(pi) = opt.processed_ignore {
+        opt.processed = Some(pi.clone());
+        opt.ignore.push(pi);
+    }
 
     let mut types_builder = TypesBuilder::new();
     types_builder.add("midi", "*.{mid,smf}").unwrap();
@@ -53,7 +63,7 @@ fn main() {
     let mut walk_builder = WalkBuilder::new(opt.input.canonicalize().unwrap());
     walk_builder.types(types_builder.build().unwrap());
     walk_builder.max_depth(opt.max_depth);
-    if let Some(ignore) = opt.ignore {
+    for ignore in opt.ignore {
         walk_builder.add_ignore(ignore);
     }
 
