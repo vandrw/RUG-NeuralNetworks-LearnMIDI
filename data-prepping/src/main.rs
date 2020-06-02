@@ -3,11 +3,13 @@ use std::io::Write;
 
 use ignore::types::TypesBuilder;
 use ignore::WalkBuilder;
-use log::info;
+use log::{warn, info, trace};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
 pub mod midi;
+
+use midi::AbortError;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -80,7 +82,9 @@ fn main() {
                     info!("track: {:?}", n);
                 }
             }
-            Err(err) => info!("track_error: {:?}", err),
+            Err(AbortError::NameMismatch) => trace!("Midi track name did not match the regex"),
+            Err(AbortError::EmptyTrack) => trace!("Midi track was basically empty"),
+            Err(err) => warn!("Error while processing midi: {:?}", err),
         });
         if let Some(processed_file) = &mut processed_file {
             writeln!(processed_file, "{}", path.to_str().unwrap()).unwrap();

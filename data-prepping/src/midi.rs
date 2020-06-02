@@ -50,7 +50,7 @@ pub enum AbortError {
     TooManyMidiChannels,
     NameMismatch,
     MultipleDifferentNames,
-    NoName,
+    EmptyTrack,
 }
 
 impl<Cb> Handler for ExtractorHandler<Cb>
@@ -133,7 +133,7 @@ where
             Some(AbortError::InvalidTimeBase) => HandlerStatus::SkipAll,
             Some(AbortError::TooManyMidiChannels)
             | Some(AbortError::NameMismatch)
-            | Some(AbortError::NoName)
+            | Some(AbortError::EmptyTrack)
             | Some(AbortError::MultipleDifferentNames) => HandlerStatus::SkipTrack,
         }
     }
@@ -160,7 +160,7 @@ where
     fn change_track(&mut self) {
         (self.callback)(match (self.abort.take(), self.current_name_match.take()) {
             (None, Some(name)) => Ok((name, &self.current_track_notes)),
-            (None, None) => Err(AbortError::NoName),
+            (None, None) => Err(AbortError::EmptyTrack),
             (Some(AbortError::InvalidTimeBase), _) => return,
             (Some(err), _) => Err(err),
         });
