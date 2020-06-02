@@ -1,8 +1,9 @@
-use std::fs::{File, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::Write;
 
 use ignore::types::TypesBuilder;
 use ignore::WalkBuilder;
+use log::info;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -72,7 +73,15 @@ fn main() {
         .take(opt.count.unwrap_or(usize::MAX));
 
     for path in walk {
-        midi::test_read_midi(&path);
+        midi::test_read_midi(&path, |track| match track {
+            Ok((name, track)) => {
+                info!("track_name: {}", name);
+                for n in track {
+                    info!("track: {:?}", n);
+                }
+            }
+            Err(err) => info!("track_error: {:?}", err),
+        });
         if let Some(processed_file) = &mut processed_file {
             writeln!(processed_file, "{}", path.to_str().unwrap()).unwrap();
         }
