@@ -12,7 +12,7 @@ pub mod output;
 
 use midi::AbortError;
 
-use output::OutputFormat;
+use output::{OutputFormat, Output};
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -58,7 +58,7 @@ struct Opt {
     /// The folder or file to search through.
     input: PathBuf,
 
-    /// The folder or file to put processed data.
+    /// The file to append processed data.
     output: PathBuf,
 }
 
@@ -102,14 +102,11 @@ fn main() {
             .unwrap()
     });
 
+    let mut output = Output::new(&opt.output, opt.output_format).unwrap();
+
     for path in create_file_walk(&opt) {
         midi::process_midi_file(&path, &opt.name_filter, |track| match track {
-            Ok((name, track)) => {
-                info!("track_name: {}", name);
-                for n in track {
-                    info!("track: {:?}", n);
-                }
-            }
+            Ok((name, track)) => output.write(&name, track).unwrap(),
             Err(AbortError::NameMismatch) => trace!("Midi track name did not match the filter"),
             Err(AbortError::EmptyTrack) => trace!("Midi track was basically empty"),
             Err(err) => warn!("Error while processing midi: {:?}", err),

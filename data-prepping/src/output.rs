@@ -12,7 +12,7 @@ pub struct Output {
 
 impl Output {
     pub fn new(path: impl AsRef<Path>, format: OutputFormat) -> IOResult<Output> {
-        let file = OpenOptions::new().append(true).open(path)?;
+        let file = OpenOptions::new().create(true).append(true).open(path)?;
         Ok(Output {
             format,
             writer: BufWriter::new(file),
@@ -77,7 +77,7 @@ struct BitsHexNotes<'a>(&'a Notes);
 impl<'a> std::fmt::Display for BitsHexNotes<'a> {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for byte in &self.0 .0 {
-            fmt.write_fmt(format_args!("{:X}", byte))?;
+            fmt.write_fmt(format_args!("{:02X}", byte))?;
         }
         Ok(())
     }
