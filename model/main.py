@@ -2,7 +2,7 @@ import tensorflow.keras as tfk
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import LSTM, Dropout, Dense, Activation
 from tensorflow.keras.callbacks import ModelCheckpoint
-# import numpy as np
+import numpy as np
 
 class MidiModel:
     def __init__(self):
@@ -50,5 +50,15 @@ class MidiModel:
         # TODO
         pass
         
+def string_to_bits(string):
+    array = np.zeros(128, dtype="float")
+    i = 0
+    for char in string:
+        bits = int(char, 16)
+        for j in range(3, -1, -1):
+            array[i] = (bits >> j) & 1
+            i += 1
+    return array
+
 if __name__ == "__main__":
     midiModel = MidiModel()
