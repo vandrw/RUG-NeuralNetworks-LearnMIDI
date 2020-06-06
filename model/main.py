@@ -13,7 +13,7 @@ class MidiModel:
             print("The model could not be loaded! Creating a new one.")
             self.model = self.create_model()
         
-        self.input_shape = [0, 0] # TODO Make this dynamic.
+        self.input_shape = (128,) # TODO Make this dynamic.
             
     def create_model(self):
         model = Sequential()
