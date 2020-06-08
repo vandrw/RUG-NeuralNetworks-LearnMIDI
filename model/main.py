@@ -3,6 +3,7 @@ from tensorflow.keras import Sequential
 from tensorflow.keras.layers import LSTM, Dropout, Dense, Activation
 from tensorflow.keras.callbacks import ModelCheckpoint
 import numpy as np
+import pandas as pd
 
 class MidiModel:
     def __init__(self):
@@ -60,5 +61,26 @@ def string_to_bits(string):
             i += 1
     return array
 
+def load_data(file_path):
+    data = pd.read_csv(file_path, encoding='utf-8', header=None)
+    data.columns = ["midi"]
+    data = data[~data.midi.str.contains("#")]
+
+    bit_data = []
+    for row in data["midi"]:
+        bit_data.append(string_to_bits(row))
+
+    bit_data = np.asarray(bit_data, dtype=np.int32)
+    
+    # np.savetxt("data/out_all_128.txt", bit_data)
+    return bit_data
+    
+
 if __name__ == "__main__":
-    midiModel = MidiModel()
+    # midiModel = MidiModel()
+    try:
+        data = load_data("data/out-all.txt")
+    except:
+        print("Data could not be imported. Check 'data/out-all.txt'...")
+    
+    print(data[:5], data.shape)
