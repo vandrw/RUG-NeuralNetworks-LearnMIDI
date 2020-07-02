@@ -2,6 +2,7 @@ import tensorflow.keras as tfk
 from tensorflow.keras import Sequential, regularizers
 from tensorflow.keras.layers import LSTM, Dropout, Dense, Activation, Flatten
 from tensorflow.keras.callbacks import ModelCheckpoint
+from itertools import islice
 import numpy as np
 
 class MidiModel:
@@ -27,21 +28,22 @@ class MidiModel:
         model.add(Dense(64, 
                         batch_input_shape=(self.batch_len, self.time_len, 128), 
                         activation="relu", 
-                        kernel_regularizer=regularizers.l2(0.01)))
+                        kernel_regularizer=None))
         model.add(Dropout(0.3))
         model.add(LSTM(80, 
                        stateful=True,
-                       kernel_regularizer=regularizers.l2(0.001),
-                       recurrent_regularizer=regularizers.l2(0.001), 
+                       kernel_regularizer=None,#regularizers.l2(0.001),
+                       recurrent_regularizer=None,#regularizers.l2(0.001), 
                        bias_regularizer=None,
-                       activity_regularizer=regularizers.l2(0.01),))
+                       activity_regularizer=None))#regularizers.l2(0.001),))
         model.add(Dropout(0.3))
         model.add(Dense(128, 
-                        activation="relu", 
-                        kernel_regularizer=regularizers.l2(0.02)))
+                        activation="relu",
+                        bias_regularizer=None,#regularizers.l2(0.001),
+                        kernel_regularizer=None))#regularizers.l2(0.0005)))
         
         model.build(input_shape=(self.batch_len, self.time_len, 128))
-        model.compile(loss='categorical_crossentropy', optimizer='adam')
+        model.compile(loss='mean_squared_error', optimizer='adagrad')
         # model.compile(loss=tfk.losses.SparseCategoricalCrossentropy(from_logits=False), optimizer='sgd')
 
         model.summary()
@@ -49,10 +51,10 @@ class MidiModel:
         return model
 
     def train(self, epochs, path, max_line_nr):
-
+        loss_update_factor = 0.99
+        loss = 1
         for i in range(0, epochs):
-            print("Epoch: ", i + 1, "/", epochs, "                            ")
-            loss = 0
+            print("Epoch:", i + 1, "/", epochs, "loss:", loss)
             batche_iter = note_batch_generator(path, self.time_len, self.batch_len)
             
             for (line_nr, batches) in batche_iter:
@@ -62,7 +64,7 @@ class MidiModel:
                 self.model.reset_states()
                 for (x, y) in batches:
                     batch_loss = self.model.train_on_batch(x, y=y)
-                    loss = loss * 0.9 + batch_loss * 0.1
+                    loss = loss * loss_update_factor + batch_loss * (1.0 - loss_update_factor)
                     print("nr: %5d, loss: %02.4f" % (line_nr, loss), end='\r')
 
     def save(self, path):
@@ -92,7 +94,9 @@ def note_batch_generator(path, time_len, batch_len):
                 continue
 
             for b in range(0, batch_count):
-                batches.append((midi_input[b * batch_len: (b + 1) * batch_len], midi_output[b * batch_len: (b + 1) * batch_len]))
+                b_start = b * batch_len
+                b_end = b_start + batch_len
+                batches.append((midi_input[b_start : b_end], midi_output[b_start : b_end]))
             
             yield (line_nr, batches)
             
@@ -133,19 +137,19 @@ def bits_to_string(bits):
 
 if __name__ == "__main__":
     data_path = "data/out-off12.txt"
-    time_len = 32
-    batch_len = 32
+    time_len = 16
+    batch_len = 64
 
-    midiModel = MidiModel(32, 32, "model/final/midi-3.h5")
-    for (line_nr, batches) in note_batch_generator(data_path, time_len, batch_len):
+    midiModel = MidiModel(time_len, batch_len, "model/final/midi-16-64-off12-adagrad-4.h5")
+    for (line_nr, batches) in islice(note_batch_generator(data_path, time_len, batch_len), 1000):
         for (b_in, b_out) in batches:
-            print(line_nr)
-            for arr in midiModel.model.predict_on_batch(b_in):
-                print(bits_to_string(arr))
+            #print(line_nr)
+            result = midiModel.model.predict_on_batch(b_in)[-1]
+            print(bits_to_string(result))
 
-    # midiModel = MidiModel(32, 32)
-    # midiModel.train(10, data_path, max_line_nr = 10000000)
-    # midiModel.save("model/final/midi.h5")
+    # midiModel = MidiModel(time_len, batch_len)
+    # midiModel.train(15, data_path, max_line_nr = 100000)
+    # midiModel.save("model/final/midi-16-64-off12-adagrad-5.h5")
 
     # notes = []
     # input_file = open("data/out-all.txt", "r")
