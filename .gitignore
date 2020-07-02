@@ -4,3 +4,5 @@
 
 data/*
 model/ckpts*
+
+**/__pycache__
