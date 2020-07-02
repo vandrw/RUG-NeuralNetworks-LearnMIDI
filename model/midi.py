@@ -22,7 +22,7 @@ def create_midi_file(steps, bpm = 60):
             idx = note[0]
             note_dur = on_count[idx]
             on_count[idx] = 0
-            midi_file.addNote(track, channel, idx, time - note_dur, note_dur, volume)
+            midi_file.addNote(track, channel, idx, (time - note_dur) / 8.0, note_dur / 8.0, volume)
         
         time += 1
     

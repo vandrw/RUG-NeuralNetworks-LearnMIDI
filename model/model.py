@@ -2,6 +2,7 @@ import tensorflow.keras as tfk
 from tensorflow.keras import Sequential, regularizers
 from tensorflow.keras.layers import LSTM, Dropout, Dense, Activation, Flatten
 from tensorflow.keras.callbacks import ModelCheckpoint
+from collections import deque
 import numpy as np
 
 from input import note_batch_generator
@@ -72,5 +73,14 @@ class MidiModel:
         self.model.save(path)
     
     def predict(self, start_notes):
+        batch = np.zeros((self.batch_len, self.time_len, 128), dtype=float)
 
-        pass
+        notes = deque(start_notes, self.time_len)
+        
+        self.model.reset_states()
+
+        while True:
+            batch[0, :, :] = notes
+            prediction = self.model.predict_on_batch(batch)[0] > 0.05
+            notes.append(prediction)
+            yield prediction

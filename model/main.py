@@ -1,7 +1,9 @@
 from itertools import islice
+import numpy as np
 
 from model import MidiModel
-from input import note_batch_generator, bits_to_string
+from input import note_batch_generator, bits_to_string, read_songs
+from midi import create_and_save_midi_file
 
 if __name__ == "__main__":
     data_path = "data/out-off12.txt"
@@ -9,11 +11,13 @@ if __name__ == "__main__":
     batch_len = 64
 
     midiModel = MidiModel(time_len, batch_len, "model/final/midi-16-64-off12-adagrad-4.h5")
-    for (line_nr, batches) in islice(note_batch_generator(data_path, time_len, batch_len), 1000):
-        for (b_in, b_out) in batches:
-            #print(line_nr)
-            result = midiModel.model.predict_on_batch(b_in)[-1]
-            print(bits_to_string(result))
+    for (line_nr, song) in read_songs(data_path):
+        notes = []
+        for bits in islice(midiModel.predict(song[:time_len]), 8*40):
+            # print(bits_to_string(bits))
+            # print (bits)
+            notes.append(bits)
+        create_and_save_midi_file(notes, "model/songs/line_%d.mid" % line_nr)
 
     # midiModel = MidiModel(time_len, batch_len)
     # midiModel.train(15, data_path, max_line_nr = 100000)
