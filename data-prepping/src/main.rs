@@ -3,7 +3,7 @@ use std::io::Write;
 
 use ignore::types::TypesBuilder;
 use ignore::WalkBuilder;
-use log::{info, trace, warn};
+use log::{trace, warn};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -12,7 +12,7 @@ pub mod output;
 
 use midi::AbortError;
 
-use output::{OutputFormat, Output};
+use output::{Output, OutputFormat};
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -54,6 +54,16 @@ struct Opt {
     /// Specify an output format. Valid options are 'bits-hex' or 'chars'.
     #[structopt(short, long, default_value = "bits-hex")]
     output_format: OutputFormat,
+
+    /// Specifies the maximum amount of consecutive output notes that can be
+    /// all zero. This is useful for training RNNs to avoid vanishing gradients.
+    #[structopt(short, long, default_value = "65535")]
+    max_off_entries: usize,
+
+    /// Specifies the maximum ratio of time steps without any note to all time
+    /// steps. If the ratio is higher than the given the track will be ignored.
+    #[structopt(long, default_value = "0.25")]
+    max_off_ratio: f32,
 
     /// The folder or file to search through.
     input: PathBuf,
@@ -102,11 +112,17 @@ fn main() {
             .unwrap()
     });
 
-    let mut output = Output::new(&opt.output, opt.output_format).unwrap();
+    let mut output = Output::new(&opt.output, opt.output_format, opt.max_off_entries).unwrap();
 
     for path in create_file_walk(&opt) {
         midi::process_midi_file(&path, &opt.name_filter, |track| match track {
-            Ok((name, track)) => output.write(&name, track).unwrap(),
+            Ok((name, track)) => {
+                let off_count = track.iter().filter(|n| n.is_empty()).count();
+                let off_ratio = off_count as f32 / track.len() as f32;
+                if off_ratio < opt.max_off_ratio {
+                    output.write(&name, track).unwrap()
+                }
+            }
             Err(AbortError::NameMismatch) => trace!("Midi track name did not match the filter"),
             Err(AbortError::EmptyTrack) => trace!("Midi track was basically empty"),
             Err(err) => warn!("Error while processing midi: {:?}", err),

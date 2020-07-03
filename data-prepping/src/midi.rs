@@ -237,6 +237,10 @@ impl Notes {
     pub fn clear(&mut self) {
         self.bits_mut().set_all(false);
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.bits().not_any()
+    }
 }
 
 impl std::fmt::Debug for Notes {

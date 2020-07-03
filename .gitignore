@@ -4,4 +4,7 @@
 
 data/*
 
+model/ckpts*
+
+**/__pycache__
 data_prepping2/midi_imgs/*

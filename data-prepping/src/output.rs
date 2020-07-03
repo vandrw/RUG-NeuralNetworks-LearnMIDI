@@ -7,14 +7,20 @@ use crate::midi::Notes;
 
 pub struct Output {
     writer: BufWriter<File>,
+    max_off_count: usize,
     format: OutputFormat,
 }
 
 impl Output {
-    pub fn new(path: impl AsRef<Path>, format: OutputFormat) -> IOResult<Output> {
+    pub fn new(
+        path: impl AsRef<Path>,
+        format: OutputFormat,
+        max_off_count: usize,
+    ) -> IOResult<Output> {
         let file = OpenOptions::new().create(true).append(true).open(path)?;
         Ok(Output {
             format,
+            max_off_count,
             writer: BufWriter::new(file),
         })
     }
@@ -22,14 +28,22 @@ impl Output {
     pub fn write(&mut self, name: &str, notes: &[Notes]) -> IOResult<()> {
         writeln!(self.writer, "# {}", name)?;
 
-        match self.format {
-            OutputFormat::BitsHex => {
-                for note in notes {
+        let mut off_count = 0;
+        for note in notes {
+            if note.is_empty() {
+                if off_count >= self.max_off_count {
+                    continue;
+                } else {
+                    off_count += 1;
+                }
+            } else {
+                off_count = 0;
+            }
+            match self.format {
+                OutputFormat::BitsHex => {
                     writeln!(self.writer, "{}", BitsHexNotes(note))?;
                 }
-            }
-            OutputFormat::Chars => {
-                for note in notes {
+                OutputFormat::Chars => {
                     writeln!(self.writer, "{}", CharsNotes(note))?;
                 }
             }

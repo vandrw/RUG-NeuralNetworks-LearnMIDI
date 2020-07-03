@@ -1,86 +1,95 @@
-import tensorflow.keras as tfk
-from tensorflow.keras import Sequential
-from tensorflow.keras.layers import LSTM, Dropout, Dense, Activation
-from tensorflow.keras.callbacks import ModelCheckpoint
+from itertools import islice
 import numpy as np
 import pandas as pd
 
-class MidiModel:
-    def __init__(self):
-        try:
-            self.model = tfk.models.load_model("model/final/midi.h5")
-            print("Model successfuly loaded.")
-        except:
-            print("The model could not be loaded! Creating a new one.")
-            self.model = self.create_model()
-        
-        self.input_shape = (128,) # TODO Make this dynamic.
-            
-    def create_model(self):
-        model = Sequential()
-
-        model.add(LSTM(256, input_shape=(
-            self.input_shape[0], self.input_shape[1]), return_sequences=True))
-        model.add(Dropout(0.3))
-        model.add(LSTM(512, return_sequences=True))
-        model.add(Dropout(0.3))
-        model.add(LSTM(256))
-        model.add(Dense(256))
-        model.add(Dropout(0.3))
-        model.add(Activation('softmax'))
-        model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
-        
-        return model
-
-    def train(self, midi_input, midi_output):
-        filepath = "model/ckpts/weights-{epoch:02d}-{loss:.4f}.hdf5"
-
-        # Checkpoints for creating a plot after training. 
-        checkpoint = ModelCheckpoint(
-            filepath, monitor='loss', 
-            verbose=1,        
-            save_best_only=True,        
-            mode='min'
-        )
-
-        self.model.fit(midi_input, midi_output, epochs=200, batch_size=64, callbacks=[checkpoint])
-
-        self.model.save("model/final/midi.h5")
-    
-    def test(self):
-        # TODO
-        pass
-        
-def string_to_bits(string):
-    array = np.zeros(128, dtype="float")
-    i = 0
-    for char in string:
-        bits = int(char, 16)
-        for j in range(3, -1, -1):
-            array[i] = (bits >> j) & 1
-            i += 1
-    return array
-
-def load_data(file_path):
-    data = pd.read_csv(file_path, encoding='utf-8', header=None)
-    data.columns = ["midi"]
-    data = data[~data.midi.str.contains("#")]
-
-    bit_data = []
-    for row in data["midi"]:
-        bit_data.append(string_to_bits(row))
-
-    bit_data = np.asarray(bit_data, dtype=np.int32)
-    
-    # np.savetxt("data/out_all_128.txt", bit_data)
-    return bit_data
-    
+from model import MidiModel
+from input import note_batch_generator, bits_to_string, read_songs
+from midi import create_and_save_midi_file
 
 if __name__ == "__main__":
-    # midiModel = MidiModel()
-    try:
-        data = load_data("data/out-all.txt")
-    except:
-        print("Data could not be imported. Check 'data/out-all.txt'...")
+    data_path = "data/out-off12.txt"
+    time_len = 16
+    batch_len = 64
+
+    midiModel = MidiModel(time_len, batch_len, "model/final/midi-16-64-off12-adagrad-4.h5")
+    for (line_nr, song) in read_songs(data_path):
+        notes = []
+        for bits in islice(midiModel.predict(song[:time_len]), 8*40):
+            # print(bits_to_string(bits))
+            # print (bits)
+            notes.append(bits)
+        create_and_save_midi_file(notes, "model/songs/line_%d.mid" % line_nr)
+
+    # midiModel = MidiModel(time_len, batch_len)
+    # midiModel.train(15, data_path, max_line_nr = 100000)
+    # midiModel.save("model/final/midi-16-64-off12-adagrad-5.h5")
+
+    # notes = []
+    # input_file = open("data/out-all.txt", "r")
+    # for line in input_file.readlines()[:50000]:
+    #     if line[0] != '#':
+    #         bits = string_to_bits(line)
+    #         if not np.all(bits == 0.0):
+    #             notes.append(string_to_bits(line))
     
-    print(data[:5], data.shape)
+
+    # midi_input = np.asarray([notes[i:i + time_len] for i in range(0, len(notes) - time_len)])
+    # midi_output = np.asarray([notes[i + time_len] for i in range(0, len(notes) - time_len)])
+    
+    # batch_count = int(len(midi_input) / batch_len)
+    # midi_input = midi_input[0:batch_count * batch_len,:] #.reshape(-1, batch_len, time_len, 128)
+    # midi_output = midi_output[0:batch_count * batch_len] #.reshape(-1, batch_len, 128)
+    
+    # print("midi_input.shape: ", midi_input.shape)
+    # print("midi_output.shape: ", midi_output.shape)
+
+    # midiModel.train(midi_input, midi_output)
+
+# Model3: Trained on all testing data generated using: `cargo run --release -- -m
+# 12 ~/data/datasets/midis/ ../data/out-off16-final2.txt`. 
+# 
+# Model:
+# model.add(Dense(64, 
+#                 batch_input_shape=(self.batch_len, self.time_len, 128), 
+#                 activation="relu", 
+#                 kernel_regularizer=regularizers.l2(0.01)))
+# model.add(Dropout(0.3))
+# model.add(LSTM(80, 
+#                 stateful=True,
+#                 kernel_regularizer=regularizers.l2(0.01),
+#                 recurrent_regularizer=regularizers.l2(0.01), 
+#                 bias_regularizer=None,
+#                 activity_regularizer=regularizers.l2(0.01),))
+# model.add(Dropout(0.3))
+# model.add(Dense(128, 
+#                 activation="relu", 
+#                 kernel_regularizer=regularizers.l2(0.02)))
+# 
+# model.build(input_shape=(self.batch_len, self.time_len, 128))
+# model.compile(loss='categorical_crossentropy', optimizer='adam')
+# 
+# batch, time = 32, 32
+=======
+# def load_data(file_path):
+#    data = pd.read_csv(file_path, encoding='utf-8', header=None)
+#    data.columns = ["midi"]
+#    data = data[~data.midi.str.contains("#")]
+#
+#    bit_data = []
+#    for row in data["midi"]:
+#        bit_data.append(string_to_bits(row))
+
+#    bit_data = np.asarray(bit_data, dtype=np.int32)
+    
+#    # np.savetxt("data/out_all_128.txt", bit_data)
+#    return bit_data
+    
+
+#if __name__ == "__main__":
+    # midiModel = MidiModel()
+#    try:
+#        data = load_data("data/out-all.txt")
+#    except:
+#        print("Data could not be imported. Check 'data/out-all.txt'...")
+#    
+#    print(data[:5], data.shape)
