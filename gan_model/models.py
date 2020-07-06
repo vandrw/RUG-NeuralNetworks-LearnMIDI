@@ -207,8 +207,8 @@ if __name__ == "__main__":
     discriminator_optimizer = tf.keras.optimizers.Adam(1e-4)
     IMG_HEIGHT = 106
     IMG_WIDTH = 106
-    BUFFER_SIZE = 1000
-    BATCH_SIZE = 64
+    BUFFER_SIZE = 10000
+    BATCH_SIZE = 256
     EPOCHS = 10
     noise_dim = 100
     num_examples_to_generate = 16
