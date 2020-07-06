@@ -33,6 +33,8 @@ def create_and_save_midi_file(steps, path, bpm = 60):
 
     with open(path, "wb") as output_file:
         midi_file.writeFile(output_file)
+    
+    print("Saved midi file: %s" % path)
 
 if __name__ == "__main__":
     steps = np.zeros((2, 128), dtype=bool)

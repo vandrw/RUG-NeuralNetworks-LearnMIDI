@@ -10,18 +10,19 @@ if __name__ == "__main__":
     time_len = 16
     batch_len = 64
 
-    midiModel = MidiModel(time_len, batch_len, "model/final/midi-16-64-off12-adagrad-4.h5")
+    # midi_model = MidiModel(0.05, time_len, batch_len)
+    # midi_model.train(100, list(islice(read_songs(data_path), 1)))
+
+    midi_model = MidiModel(0.1, time_len, batch_len, "model/final/test3.h5")
     for (line_nr, song) in read_songs(data_path):
         notes = []
-        for bits in islice(midiModel.predict(song[:time_len]), 8*40):
+        for bits in islice(midi_model.predict(song[:time_len]), 8*40):
             # print(bits_to_string(bits))
             # print (bits)
             notes.append(bits)
         create_and_save_midi_file(notes, "model/songs/line_%d.mid" % line_nr)
 
-    # midiModel = MidiModel(time_len, batch_len)
-    # midiModel.train(15, data_path, max_line_nr = 100000)
-    # midiModel.save("model/final/midi-16-64-off12-adagrad-5.h5")
+    # midi_model.save("model/final/midi-16-64-off12-adagrad-5.h5")
 
     # notes = []
     # input_file = open("data/out-all.txt", "r")
@@ -42,7 +43,7 @@ if __name__ == "__main__":
     # print("midi_input.shape: ", midi_input.shape)
     # print("midi_output.shape: ", midi_output.shape)
 
-    # midiModel.train(midi_input, midi_output)
+    # midi_model.train(midi_input, midi_output)
 
 # Model3: Trained on all testing data generated using: `cargo run --release -- -m
 # 12 ~/data/datasets/midis/ ../data/out-off16-final2.txt`. 
