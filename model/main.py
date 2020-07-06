@@ -1,5 +1,6 @@
 from itertools import islice
 import numpy as np
+import pandas as pd
 
 from model import MidiModel
 from input import note_batch_generator, bits_to_string, read_songs
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     # batch_count = int(len(midi_input) / batch_len)
     # midi_input = midi_input[0:batch_count * batch_len,:] #.reshape(-1, batch_len, time_len, 128)
     # midi_output = midi_output[0:batch_count * batch_len] #.reshape(-1, batch_len, 128)
-
+    
     # print("midi_input.shape: ", midi_input.shape)
     # print("midi_output.shape: ", midi_output.shape)
 
@@ -69,3 +70,27 @@ if __name__ == "__main__":
 # model.compile(loss='categorical_crossentropy', optimizer='adam')
 # 
 # batch, time = 32, 32
+=======
+# def load_data(file_path):
+#    data = pd.read_csv(file_path, encoding='utf-8', header=None)
+#    data.columns = ["midi"]
+#    data = data[~data.midi.str.contains("#")]
+#
+#    bit_data = []
+#    for row in data["midi"]:
+#        bit_data.append(string_to_bits(row))
+
+#    bit_data = np.asarray(bit_data, dtype=np.int32)
+    
+#    # np.savetxt("data/out_all_128.txt", bit_data)
+#    return bit_data
+    
+
+#if __name__ == "__main__":
+    # midiModel = MidiModel()
+#    try:
+#        data = load_data("data/out-all.txt")
+#    except:
+#        print("Data could not be imported. Check 'data/out-all.txt'...")
+#    
+#    print(data[:5], data.shape)
