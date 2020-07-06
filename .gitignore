@@ -8,3 +8,7 @@ model/ckpts*
 
 **/__pycache__
 data_prepping2/midi_imgs/*
+data_prepping2/midi_imgs2/*
+gan_model/dcgan.ipynb
+
+*.zip

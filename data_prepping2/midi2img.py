@@ -43,6 +43,11 @@ def get_notes(notes_to_parse):
 
 
 def midi2image(midi_path):
+    # print("[INFO] Checking " + midi_path.split(os.sep)[-1].split(".")[0] + f"_Piano_0.png")
+    if (os.path.exists("midi_imgs2" + os.sep + midi_path.split(os.sep)[-1].split(".")[0] + f"_Piano_0.png")):
+        print("[SKIP] Already exists!")
+        return
+
     mid = converter.parse(midi_path)
 
     instruments = instrument.partitionByInstrument(mid)
@@ -50,24 +55,32 @@ def midi2image(midi_path):
     data = {}
 
     try:
-        i = 0
-        for instrument_i in instruments.parts:
-            notes_to_parse = instrument_i.recurse()
+    #     i = 0
+        # for instrument_i in instruments.parts:
+    #         if instrument_i.partName != "Piano":
+    #             continue
 
-            if instrument_i.partName is None:
-                data["instrument_{}".format(i)] = get_notes(notes_to_parse)
-                i += 1
-            else:
-                data[instrument_i.partName] = get_notes(notes_to_parse)
+    #         notes_to_parse = instrument_i.recurse()
 
-    except:
-        notes_to_parse = mid.flat.notes
-        data["instrument_0".format(i)] = get_notes(notes_to_parse)
+    #         if instrument_i.partName is None:
+    #             data["instrument_{}".format(i)] = get_notes(notes_to_parse)
+    #             i += 1
+    #         else:
+    #             data[instrument_i.partName] = get_notes(notes_to_parse)
+
+        data["Piano"] = get_notes(instruments.parts["Piano"].recurse())
+
+    except Exception as e:
+        print("[ERR] Failed! " + str(e))
+        return
+    #     notes_to_parse = mid.flat.notes
+    #     data["instrument_0".format(i)] = get_notes(notes_to_parse)
 
     resolution = 0.25
 
     for instrument_name, values in data.items():
         # https://en.wikipedia.org/wiki/Scientific_pitch_notation#Similar_systems
+
         upperBoundNote = 127
         lowerBoundNote = 21
         maxSongLength = 106
@@ -107,7 +120,7 @@ def midi2image(midi_path):
                 repetitions += 1
                 continue
 
-            imwrite("midi_imgs" + os.sep + midi_path.split(
+            imwrite("midi_imgs2" + os.sep + midi_path.split(
                 "/")[-1].replace(".mid", f"_{instrument_name}_{index}.png"), matrix)
             index += 1
             repetitions += 1
