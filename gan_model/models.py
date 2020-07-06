@@ -151,12 +151,10 @@ def train(data):
         start = time.time()
 
         for image_batch in data:
-            print("Go")
             train_step(image_batch)
 
         # Save the model every 15 epochs
         if (epoch + 1) % 15 == 0:
-            print("idk")
             checkpoint.save(file_prefix=checkpoint_prefix)
 
         print('Time for epoch {} is {} sec'.format(
