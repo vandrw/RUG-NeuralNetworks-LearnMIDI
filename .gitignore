@@ -12,3 +12,5 @@ data_prepping2/midi_imgs2/*
 gan_model/dcgan.ipynb
 
 *.zip
+
+gan_model/images/*

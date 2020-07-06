@@ -100,15 +100,15 @@ def discriminator_loss(real_output, fake_output):
 def generate_and_save_images(model, epoch, test_input):
     predictions = model(test_input, training=False)
 
-    fig = plt.figure(figsize=(4, 4))
 
     for i in range(predictions.shape[0]):
-        plt.subplot(4, 4, i+1)
+        fig = plt.figure()
+        # plt.subplot(4, 4, i+1)
         plt.imshow(predictions[i, :, :, 0], cmap='gray')
         plt.axis('off')
 
-    plt.savefig('gan_model/images/image_at_epoch_{:04d}.png'.format(epoch))
-    plt.show()
+        plt.savefig('gan_model/images/image_at_epoch_{:04d}_{:04d}.png'.format(epoch, i))
+    # plt.show()
 
 
 @tf.function
@@ -146,8 +146,8 @@ def train(data):
     seed = tf.random.normal(
         [num_examples_to_generate, noise_dim])
 
+    print("Starting training...")
     for epoch in range(EPOCHS):
-        print("Epoch: " + str(epoch))
         start = time.time()
 
         for image_batch in data:
@@ -208,8 +208,8 @@ if __name__ == "__main__":
     IMG_HEIGHT = 106
     IMG_WIDTH = 106
     BUFFER_SIZE = 1000
-    BATCH_SIZE = 32
-    EPOCHS = 50
+    BATCH_SIZE = 128
+    EPOCHS = 10
     noise_dim = 100
     num_examples_to_generate = 16
     cross_entropy = tf.keras.losses.BinaryCrossentropy(
