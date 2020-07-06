@@ -145,6 +145,12 @@ def train(data):
 
     seed = tf.random.normal(
         [num_examples_to_generate, noise_dim])
+    
+    try:
+        checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
+        print("Successfully loaded previous checkpoint!")
+    except:
+        print("Could not load any checkpoints!")
 
     print("Starting training...")
     for epoch in range(EPOCHS):
