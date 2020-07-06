@@ -153,8 +153,8 @@ def train(data):
         for image_batch in data:
             train_step(image_batch)
 
-        # Save the model every 15 epochs
-        if (epoch + 1) % 15 == 0:
+        # Save the model every 5 epochs
+        if (epoch + 1) % 5 == 0:
             checkpoint.save(file_prefix=checkpoint_prefix)
 
         print('Time for epoch {} is {} sec'.format(
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     IMG_WIDTH = 106
     BUFFER_SIZE = 10000
     BATCH_SIZE = 256
-    EPOCHS = 10
+    EPOCHS = 50
     noise_dim = 100
     num_examples_to_generate = 16
     cross_entropy = tf.keras.losses.BinaryCrossentropy(
