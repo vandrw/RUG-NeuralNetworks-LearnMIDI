@@ -208,7 +208,7 @@ if __name__ == "__main__":
     IMG_HEIGHT = 106
     IMG_WIDTH = 106
     BUFFER_SIZE = 1000
-    BATCH_SIZE = 128
+    BATCH_SIZE = 64
     EPOCHS = 10
     noise_dim = 100
     num_examples_to_generate = 16
