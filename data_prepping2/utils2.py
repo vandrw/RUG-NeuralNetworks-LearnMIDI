@@ -39,3 +39,5 @@ for root, dirs, files in os.walk(folder_path):
             except Exception as e:
                 print("[FAIL] " + str(e))
                 continue
+
+# [INFO] Converting  JJames-Last-Medley-Nr-5-(Medley).mid
