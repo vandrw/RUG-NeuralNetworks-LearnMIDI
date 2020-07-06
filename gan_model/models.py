@@ -212,7 +212,7 @@ if __name__ == "__main__":
     BUFFER_SIZE = 7407
     BATCH_SIZE = 256
     EPOCHS = 50
-    noise_dim = 800
+    noise_dim = 100
     num_examples_to_generate = 16
     cross_entropy = tf.keras.losses.BinaryCrossentropy(
         from_logits=True)
