@@ -11,16 +11,17 @@ if __name__ == "__main__":
     time_len = 16
     batch_len = 64
 
-    # midi_model = MidiModel(0.05, time_len, batch_len)
-    # midi_model.train(100, list(islice(read_songs(data_path), 1)))
+    midi_model = MidiModel(0.05, time_len, batch_len)
+    print (midi_model.train(3, list(islice(read_songs(data_path), 3))))
 
-    midi_model = MidiModel(0.1, time_len, batch_len, "model/final/test3.h5")
+    # midi_model = MidiModel(0.2, time_len, batch_len, path = "model/final/test6.h5")
     for (line_nr, song) in read_songs(data_path):
         notes = []
-        for bits in islice(midi_model.predict(song[:time_len]), 8*40):
+        for bits in islice(midi_model.predict(song[:time_len]), 8 * 106):
             # print(bits_to_string(bits))
             # print (bits)
             notes.append(bits)
+        
         create_and_save_midi_file(notes, "model/songs/line_%d.mid" % line_nr)
 
     # midi_model.save("model/final/midi-16-64-off12-adagrad-5.h5")
@@ -70,7 +71,7 @@ if __name__ == "__main__":
 # model.compile(loss='categorical_crossentropy', optimizer='adam')
 # 
 # batch, time = 32, 32
-=======
+
 # def load_data(file_path):
 #    data = pd.read_csv(file_path, encoding='utf-8', header=None)
 #    data.columns = ["midi"]
