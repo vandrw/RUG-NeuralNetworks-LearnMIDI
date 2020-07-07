@@ -100,15 +100,15 @@ def discriminator_loss(real_output, fake_output):
 def generate_and_save_images(model, epoch, test_input):
     predictions = model(test_input, training=False)
 
-    fig = plt.figure(figsize=(4, 4))
 
     for i in range(predictions.shape[0]):
-        plt.subplot(4, 4, i+1)
+        fig = plt.figure()
+        # plt.subplot(4, 4, i+1)
         plt.imshow(predictions[i, :, :, 0], cmap='gray')
         plt.axis('off')
 
-    plt.savefig('gan_model/images/image_at_epoch_{:04d}.png'.format(epoch))
-    plt.show()
+        plt.savefig('gan_model/images/image_at_epoch_{:04d}_{:04d}.png'.format(epoch, i))
+    # plt.show()
 
 
 @tf.function
@@ -145,18 +145,22 @@ def train(data):
 
     seed = tf.random.normal(
         [num_examples_to_generate, noise_dim])
+    
+    try:
+        checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
+        print("Successfully loaded previous checkpoint!")
+    except:
+        print("Could not load any checkpoints!")
 
+    print("Starting training...")
     for epoch in range(EPOCHS):
-        print("Epoch: " + str(epoch))
         start = time.time()
 
         for image_batch in data:
-            print("Go")
             train_step(image_batch)
 
-        # Save the model every 15 epochs
-        if (epoch + 1) % 15 == 0:
-            print("idk")
+        # Save the model every 5 epochs
+        if (epoch + 1) % 5 == 0:
             checkpoint.save(file_prefix=checkpoint_prefix)
 
         print('Time for epoch {} is {} sec'.format(
@@ -209,10 +213,10 @@ if __name__ == "__main__":
     discriminator_optimizer = tf.keras.optimizers.Adam(1e-4)
     IMG_HEIGHT = 106
     IMG_WIDTH = 106
-    BUFFER_SIZE = 7407
+    BUFFER_SIZE = 10000
     BATCH_SIZE = 256
     EPOCHS = 50
-    noise_dim = 800
+    noise_dim = 100
     num_examples_to_generate = 16
     cross_entropy = tf.keras.losses.BinaryCrossentropy(
         from_logits=True)
