@@ -7,22 +7,6 @@ import glob
 import imageio
 import time
 
-
-# class midiGAN():
-#     def __init__(self):
-#         self.generator = self.make_generator()
-#         self.discriminator = self.make_discriminator()
-#         self.generator_optimizer = tf.keras.optimizers.Adam(1e-4)
-#         self.discriminator_optimizer = tf.keras.optimizers.Adam(1e-4)
-#         self.IMG_HEIGHT = 106
-#         self.IMG_WIDTH = 106
-#         self.BATCH_SIZE = 128
-#         self.EPOCHS = 50
-#         self.noise_dim = 100
-#         self.num_examples_to_generate = 16
-#         self.cross_entropy = tf.keras.losses.BinaryCrossentropy(
-#             from_logits=True)
-
 def make_generator():
     model = tf.keras.Sequential()
     model.add(tf.keras.layers.Dense(
@@ -36,28 +20,24 @@ def make_generator():
     model.add(tf.keras.layers.Conv2DTranspose(
         128, (5, 5), strides=(1, 1), padding='same', use_bias=False))
     # New shape is (BATCH_SIZE, 53, 53, 128)
-    assert model.output_shape == (None, 53, 53, 128)
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.LeakyReLU())
 
     model.add(tf.keras.layers.Conv2DTranspose(
         64, (5, 5), strides=(1, 1), padding='same', use_bias=False))
     # New shape is (BATCH_SIZE, 53, 53, 64)
-    assert model.output_shape == (None, 53, 53, 64)
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.LeakyReLU())
 
     model.add(tf.keras.layers.Conv2DTranspose(
         32, (5, 5), strides=(1, 1), padding='same', use_bias=False))
     # New shape is (BATCH_SIZE, 53, 53, 32)
-    assert model.output_shape == (None, 53, 53, 32)
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.LeakyReLU())
 
     model.add(tf.keras.layers.Conv2DTranspose(1, (5, 5), strides=(
         2, 2), padding='same', use_bias=False, activation='tanh'))
     # New shape is (BATCH_SIZE, 106, 106, 1)
-    assert model.output_shape == (None, 106, 106, 1)
 
     return model
 
@@ -70,19 +50,21 @@ def make_discriminator():
     model = tf.keras.Sequential()
     model.add(tf.keras.layers.Conv2D(32, (5, 5), strides=(2, 2), padding='same',
                                      input_shape=[106, 106, 1]))
-    assert model.output_shape == (None, 53, 53, 32)
     model.add(tf.keras.layers.LeakyReLU())
     model.add(tf.keras.layers.Dropout(0.3))
 
     model.add(tf.keras.layers.Conv2D(
         64, (5, 5), strides=(1, 1), padding='same'))
-    assert model.output_shape == (None, 53, 53, 64)
     model.add(tf.keras.layers.LeakyReLU())
     model.add(tf.keras.layers.Dropout(0.3))
 
     model.add(tf.keras.layers.Conv2D(
         128, (5, 5), strides=(1, 1), padding='same'))
-    assert model.output_shape == (None, 53, 53, 128)
+    model.add(tf.keras.layers.LeakyReLU())
+    model.add(tf.keras.layers.Dropout(0.3))
+
+    model.add(tf.keras.layers.Conv2D(
+        256, (5, 5), strides=(1, 1), padding='same'))
     model.add(tf.keras.layers.LeakyReLU())
     model.add(tf.keras.layers.Dropout(0.3))
 
@@ -107,7 +89,7 @@ def generate_and_save_images(model, epoch, test_input):
         plt.imshow(predictions[i, :, :, 0], cmap='gray')
         plt.axis('off')
 
-        plt.savefig('gan_model/images/image_at_epoch_{:04d}_{:04d}.png'.format(epoch, i))
+        plt.savefig('gan_model/images/image_at_epoch_{:04d}_{:04d}.png'.format(epoch, i),  bbox_inches='tight',transparent=True, pad_inches=0)
     # plt.show()
 
 
@@ -170,43 +152,13 @@ def train(data):
     generate_and_save_images(generator, EPOCHS, seed)
 
 
-# def process_path(file_path):
-#     img = tf.io.read_file(file_path)
-#     img = tf.io.decode_png(img, channels=1)
-#     return img
-
-
-# def load_data(data_dir, cache=True, shuffle_buffer_size=1000):
-#     list_ds = tf.data.Dataset.list_files(str(data_dir + "/*"))
-
-#     ds = list_ds.map(process_path,
-#                      num_parallel_calls=tf.data.experimental.AUTOTUNE)
-
-#     if cache:
-#         if isinstance(cache, str):
-#             ds = ds.cache(cache)
-#         else:
-#             ds = ds.cache()
-
-#     ds = ds.shuffle(buffer_size=shuffle_buffer_size)
-#     ds = ds.repeat()
-#     ds = ds.batch(BATCH_SIZE)
-#     ds = ds.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-
-#     return ds
-
 def load_data(folder):
     images = []
     for im_path in glob.glob(folder + "/*.png"):
         images.append(imageio.imread(im_path))
     return np.asarray(images)
 
-
-# %%
-# %cd /mnt/c/Docs/RUG/Second Year/2B/Neural Networks/RUG-NeuralNetworks-LearnMIDI
-# %%
 if __name__ == "__main__":
-    # gan = midiGAN()
     generator = make_generator()
     discriminator = make_discriminator()
     generator_optimizer = tf.keras.optimizers.Adam(1e-4)
@@ -215,20 +167,15 @@ if __name__ == "__main__":
     IMG_WIDTH = 106
     BUFFER_SIZE = 10000
     BATCH_SIZE = 256
-    EPOCHS = 50
+    EPOCHS = 5
     noise_dim = 100
     num_examples_to_generate = 16
     cross_entropy = tf.keras.losses.BinaryCrossentropy(
         from_logits=True)
 
-    # data = load_data("data_prepping2/midi_imgs2")
     train_images = load_data("data_prepping2/midi_imgs2")
     train_images = train_images.reshape(train_images.shape[0], 106, 106, 1).astype('float32')
     train_images = (train_images - 127.5) / 127.5 # Normalize the images to [-1, 1]
     train_dataset = tf.data.Dataset.from_tensor_slices(train_images).shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
-# %%
-    train(train_dataset)
-    # image_batch = next(iter(data))
-    # show_batch(image_batch.numpy(), label_batch.numpy())
 
-# %%
+    train(train_dataset)

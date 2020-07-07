@@ -44,9 +44,9 @@ def get_notes(notes_to_parse):
 
 def midi2image(midi_path):
     # print("[INFO] Checking " + midi_path.split(os.sep)[-1].split(".")[0] + f"_Piano_0.png")
-    if (os.path.exists("midi_imgs2" + os.sep + midi_path.split(os.sep)[-1].split(".")[0] + f"_Piano_0.png")):
-        print("[SKIP] Already exists!")
-        return
+    # if (os.path.exists("midi_imgs2" + os.sep + midi_path.split(os.sep)[-1].split(".")[0] + f"_Piano_0.png")):
+    #     print("[SKIP] Already exists!")
+    #     return
 
     mid = converter.parse(midi_path)
 
@@ -55,26 +55,26 @@ def midi2image(midi_path):
     data = {}
 
     try:
-    #     i = 0
-        # for instrument_i in instruments.parts:
-    #         if instrument_i.partName != "Piano":
-    #             continue
+        i = 0
+        for instrument_i in instruments.parts:
+            if instrument_i.partName != "Piano":
+                continue
 
-    #         notes_to_parse = instrument_i.recurse()
+            notes_to_parse = instrument_i.recurse()
 
-    #         if instrument_i.partName is None:
-    #             data["instrument_{}".format(i)] = get_notes(notes_to_parse)
-    #             i += 1
-    #         else:
-    #             data[instrument_i.partName] = get_notes(notes_to_parse)
+            if instrument_i.partName is None:
+                data["instrument_{}".format(i)] = get_notes(notes_to_parse)
+                i += 1
+            else:
+                data[instrument_i.partName] = get_notes(notes_to_parse)
 
-        data["Piano"] = get_notes(instruments.parts["Piano"].recurse())
+        # data["Piano"] = get_notes(instruments.parts["Piano"].recurse())
 
     except Exception as e:
-        print("[ERR] Failed! " + str(e))
-        return
-    #     notes_to_parse = mid.flat.notes
-    #     data["instrument_0".format(i)] = get_notes(notes_to_parse)
+        # print("[ERR] Failed! " + str(e))
+        # return
+        notes_to_parse = mid.flat.notes
+        data["instrument_0".format(i)] = get_notes(notes_to_parse)
 
     resolution = 0.25
 
